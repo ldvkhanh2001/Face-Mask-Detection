@@ -26,8 +26,10 @@ import os
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", required=True,
-	help="path to input dataset")
+ap.add_argument("-t", "--train", required=True,
+	help="path to input training data")
+ap.add_argument("-v", "--val", required=True,
+				help="path to input validating data")
 ap.add_argument("-p", "--plot", type=str, default="plot.png",
 	help="path to output loss/accuracy plot")
 ap.add_argument("-m", "--model", type=str,
@@ -44,6 +46,7 @@ BS = 32
 # grab the list of images in our dataset directory, then initialize
 # the list of data (i.e., images) and class images
 print("[INFO] loading images...")
+""""
 imagePaths = list(paths.list_images(args["dataset"]))
 data = []
 labels = []
@@ -61,20 +64,41 @@ for imagePath in imagePaths:
 	# update the data and labels lists, respectively
 	data.append(image)
 	labels.append(label)
+"""
+def read_data(path):
+	imagePaths = list(paths.list_images(path))
+	data = []
+	labels = []
+	for imagePath in imagePaths:
+		label = imagePath.split(os.path.sep)[-2]
+		image = load_img(imagePath, target_size=(224,224))
+		image = img_to_array(image)
+		image = preprocess_input(image)
+		data.append((image))
+		labels.append(label)
+	data = np.array(data, dtype="float32")
+	labels = np.array(labels)
+	lb = LabelBinarizer()
+	labels = lb.fit_transform(labels)
+	labels = to_categorical(labels)
+	return data, labels
+trainX, trainY = read_data(args["train"])
+testX, testY = read_data(args["test"])
+
 
 # convert the data and labels to NumPy arrays
-data = np.array(data, dtype="float32")
-labels = np.array(labels)
+"""data = np.array(data, dtype="float32")
+labels = np.array(labels)"""""
 
 # perform one-hot encoding on the labels
-lb = LabelBinarizer()
+"""lb = LabelBinarizer()
 labels = lb.fit_transform(labels)
-labels = to_categorical(labels)
+labels = to_categorical(labels)"""
 
 # partition the data into training and testing splits using 75% of
 # the data for training and the remaining 25% for testing
-(trainX, testX, trainY, testY) = train_test_split(data, labels,
-	test_size=0.20, stratify=labels, random_state=42)
+"""(trainX, testX, trainY, testY) = train_test_split(data, labels,
+	test_size=0.20, stratify=labels, random_state=42)"""
 
 # construct the training image generator for data augmentation
 aug = ImageDataGenerator(
@@ -98,7 +122,7 @@ headModel = AveragePooling2D(pool_size=(7, 7))(headModel)
 headModel = Flatten(name="flatten")(headModel)
 headModel = Dense(128, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
-headModel = Dense(2, activation="softmax")(headModel)
+headModel = Dense(3, activation="softmax")(headModel)
 
 # place the head FC model on top of the base model (this will become
 # the actual model we will train)
